@@ -1,0 +1,26 @@
+# --- Core / brain (only the SDK for your chosen LLM_PROVIDER is actually used) ---
+fastapi
+uvicorn[standard]
+python-dotenv
+anthropic
+openai
+google-genai
+# Groq needs no separate package — it reuses the openai SDK with a
+# different base_url (see agent/providers.py).
+
+# --- Browser automation ---
+# After installing, also run: playwright install chromium
+playwright
+
+# --- System control (Windows) ---
+psutil
+pillow
+screen-brightness-control
+pycaw
+comtypes
+
+# --- Voice ---
+SpeechRecognition
+faster-whisper
+PyAudio
+edge-tts

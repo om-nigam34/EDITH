@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>EDITH</title>
+<link rel="stylesheet" href="/static/style.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="state-idle">
+
+  <div class="grid-bg"></div>
+  <div class="scanline"></div>
+
+  <header class="brand">EDITH</header>
+
+  <main class="stage">
+    <div class="core" id="core">
+      <svg viewBox="0 0 300 300" class="rings" aria-hidden="true">
+        <circle class="ring ring-outer" cx="150" cy="150" r="130" />
+        <circle class="ring ring-mid"   cx="150" cy="150" r="102" />
+        <circle class="ring ring-inner" cx="150" cy="150" r="74" />
+        <circle class="ring ring-core"  cx="150" cy="150" r="40" />
+      </svg>
+      <div class="waveform" id="waveform">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <canvas id="handCanvas" class="hand-canvas"></canvas>
+    </div>
+    <div class="status" id="status">ONLINE</div>
+    <div class="gesture-label" id="gestureLabel"></div>
+  </main>
+
+  <section class="transcript" id="transcript"></section>
+
+  <footer class="controls">
+    <button id="continuousBtn" class="mic-btn continuous-btn" title="Toggle hands-free conversation (auto-relisten after each reply)">&#128257;</button>
+    <button id="gestureBtn" class="mic-btn gesture-btn" title="Toggle hand gesture control">&#9995;</button>
+    <button id="micBtn" class="mic-btn" title="Tap to speak, or tap while EDITH is talking to interrupt">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2z"/></svg>
+    </button>
+    <input id="textInput" type="text" placeholder="Type a command..." autocomplete="off" />
+    <button id="sendBtn" class="send-btn">SEND</button>
+  </footer>
+
+  <!-- Off-screen: camera source for gesture detection (never leaves the browser) -->
+  <video id="camFeed" playsinline muted style="position:fixed; top:-9999px; left:-9999px; width:1px; height:1px;"></video>
+  <!-- Hidden: TTS audio playback, analyzed live for the waveform visual -->
+  <audio id="ttsAudio" style="display:none;"></audio>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

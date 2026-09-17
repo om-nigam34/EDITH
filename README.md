@@ -197,15 +197,3 @@ add the config fields to `config.py`. Nothing else changes.
   Since replies only arrive right after you've clicked mic/send/a gesture,
   this is normally a non-issue; if you ever see "TAP TO HEAR REPLY," one
   click anywhere resumes it.
-
-## A note on the Gemini provider specifically
-
-Gemini's function-calling wire format was the least consistent across
-Google's own documentation while building this (Google has at least two
-overlapping API styles right now). The implementation in
-`agent/providers.py` follows the most-corroborated pattern, but this is
-the one piece I couldn't verify against a live API call. If it errors on
-your first real run, check
-https://ai.google.dev/gemini-api/docs/function-calling against your
-installed `google-genai` version — that's the most likely spot needing a
-small adjustment.

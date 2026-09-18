@@ -14,6 +14,7 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
+from agent import tools
 from agent.core import EdithAgent
 from config import config
 from voice import stt, tts
@@ -52,7 +53,7 @@ async def startup() -> None:
     agent = EdithAgent()
     print(
         f"[EDITH] Online. Provider: {config.LLM_PROVIDER} | Model: {config.active_model()} "
-        f"| http://{config.HOST}:{config.PORT}"
+        f"| STT: {config.STT_BACKEND} | http://{config.HOST}:{config.PORT}"
     )
 
 
@@ -81,9 +82,20 @@ async def ws_endpoint(websocket: WebSocket) -> None:
                 }))
                 continue
 
+            if msg_type == "set_volume":
+                # A continuous gesture control (pinch-to-adjust, see
+                # frontend/app.js) firing many times a second has no
+                # business round-tripping through an LLM call — this goes
+                # straight to the tool, same as any other deterministic,
+                # unambiguous action would.
+                level = int(message.get("level", 50))
+                result = await tools.run_tool("set_volume", {"level": level})
+                await websocket.send_text(json.dumps({"type": "volume_ack", "level": level, "text": result}))
+                continue
+
             if msg_type == "listen":
                 await send_state("listening")
-                user_text = await asyncio.to_thread(stt.listen_once)
+                user_text = await stt.listen_once()
                 await websocket.send_text(json.dumps({"type": "heard", "text": user_text}))
                 if not user_text:
                     await send_state("idle")

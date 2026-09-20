@@ -12,6 +12,7 @@ const handCtx = handCanvas.getContext('2d');
 const ttsAudio = document.getElementById('ttsAudio');
 const waveformEl = document.getElementById('waveform');
 const waveformBars = waveformEl.querySelectorAll('span');
+const core = document.getElementById('core');
 
 const STATUS_LABELS = {
   idle: 'ONLINE',
@@ -67,6 +68,12 @@ function connect() {
         break;
       case 'response':
         addLine('edith', msg.text);
+        break;
+      case 'volume_ack':
+        // Live feedback for the pinch gesture below — deliberately not
+        // added to the transcript, since a continuous gesture firing
+        // several times a second would spam it.
+        gestureLabelEl.textContent = `VOLUME ${msg.level}%`;
         break;
       case 'error':
         setState('error');
@@ -217,6 +224,19 @@ const gestureState = { current: 'none', since: 0, lastFired: null, lastFiredAt: 
 const HOLD_MS = 550;
 const COOLDOWN_MS = 1400;
 
+// Pinch-to-adjust-volume — a continuous gesture, handled separately from
+// the discrete hold-to-fire ones above. Thresholds are normalized against
+// the hand's own on-screen size (thumb-to-index distance divided by
+// wrist-to-middle-knuckle distance) so it works at different distances
+// from the camera, but the exact numbers are a starting point — tune
+// PINCH_CLOSED/PINCH_OPEN against your own webcam and hand if it feels
+// off, since this wasn't tunable against a live camera from here.
+const PINCH_CLOSED = 0.15;
+const PINCH_OPEN = 1.1;
+const PINCH_ENGAGE_MAX = 0.85; // above this ratio, treat the hand as "not pinching" (relaxed/open)
+let lastVolumeSent = -1;
+let lastVolumeSentAt = 0;
+
 const HAND_CONNECTIONS = [
   [0, 1], [1, 2], [2, 3], [3, 4],
   [0, 5], [5, 6], [6, 7], [7, 8],
@@ -264,7 +284,7 @@ async function enableGestureControl() {
     document.body.classList.add('gesture-active');
     gestureBtn.classList.add('active');
     gestureBtn.disabled = false;
-    gestureBtn.title = 'Open palm = listen, fist = stop, thumbs up = confirm. Click to disable.';
+    gestureBtn.title = 'Open palm = listen, fist = stop, thumbs up = confirm, pinch = adjust volume. Click to disable.';
     gestureLabelEl.textContent = 'GESTURES READY';
     consecutiveTrackErrors = 0;
     trackHands();
@@ -288,6 +308,7 @@ function disableGestureControl() {
   }
   handCtx.clearRect(0, 0, handCanvas.width, handCanvas.height);
   gestureLabelEl.textContent = '';
+  resetOrbTransform();
   document.body.classList.remove('gesture-active');
   gestureBtn.classList.remove('active');
   gestureBtn.title = 'Toggle hand gesture control';
@@ -309,8 +330,11 @@ function trackHands() {
       const landmarks = results.landmarks[0];
       drawSkeleton(landmarks);
       updateGestureState(classifyGesture(landmarks));
+      updateOrbTransform(landmarks);
+      handlePinchVolume(landmarks);
     } else {
       updateGestureState('none');
+      resetOrbTransform();
     }
     consecutiveTrackErrors = 0;
   } catch (err) {
@@ -344,6 +368,65 @@ function drawSkeleton(landmarks) {
   });
 }
 
+// The orb (the existing SVG ring core, #core) drifts toward your hand's
+// on-screen position — the same "the interface responds to your hand"
+// feel as a reactive 3D orb, done with a CSS transform on the existing 2D
+// HUD instead of introducing a Three.js/WebGL rewrite. That's a deliberate
+// tradeoff: a real WebGL orb would look closer to the reels that inspired
+// this, but it's a materially bigger dependency and rebuild than a
+// transform on what's already here — worth doing as a dedicated follow-up
+// if the look matters more than the lightweight, build-step-free frontend.
+function updateOrbTransform(landmarks) {
+  const avgX = landmarks.reduce((s, l) => s + l.x, 0) / landmarks.length;
+  const avgY = landmarks.reduce((s, l) => s + l.y, 0) / landmarks.length;
+  // Mirrored the same way drawSkeleton mirrors the skeleton overlay, so the
+  // orb drifts the same direction your hand visually appears to move.
+  const mirroredX = 1 - avgX;
+  const offsetX = (mirroredX - 0.5) * 70;
+  const offsetY = (avgY - 0.5) * 70;
+  core.style.transform = `translate(${offsetX.toFixed(1)}px, ${offsetY.toFixed(1)}px)`;
+}
+
+function resetOrbTransform() {
+  core.style.transform = 'translate(0px, 0px)';
+}
+
+function pinchRatio(landmarks) {
+  const pinchDist = Math.hypot(landmarks[4].x - landmarks[8].x, landmarks[4].y - landmarks[8].y);
+  const palmScale = Math.hypot(landmarks[0].x - landmarks[9].x, landmarks[0].y - landmarks[9].y) || 1;
+  return pinchDist / palmScale;
+}
+
+// A clenched fist also brings the thumb and index tip close together (they
+// converge near the palm as all the fingers curl in) - pinchRatio alone
+// can't tell that apart from a deliberate pinch. What does: a real pinch
+// is held forward, away from the palm; a fist's convergence point sits
+// right on top of the palm center. Tested against synthetic landmark data
+// for both poses before relying on it - see the 0.5 threshold below.
+function pinchDistanceFromPalm(landmarks) {
+  const midX = (landmarks[4].x + landmarks[8].x) / 2;
+  const midY = (landmarks[4].y + landmarks[8].y) / 2;
+  const palmX = (landmarks[0].x + landmarks[5].x + landmarks[9].x + landmarks[13].x + landmarks[17].x) / 5;
+  const palmY = (landmarks[0].y + landmarks[5].y + landmarks[9].y + landmarks[13].y + landmarks[17].y) / 5;
+  const palmScale = Math.hypot(landmarks[0].x - landmarks[9].x, landmarks[0].y - landmarks[9].y) || 1;
+  return Math.hypot(midX - palmX, midY - palmY) / palmScale;
+}
+
+function handlePinchVolume(landmarks) {
+  const ratio = pinchRatio(landmarks);
+  if (ratio > PINCH_ENGAGE_MAX) return; // hand is open/relaxed, not deliberately pinching
+  if (pinchDistanceFromPalm(landmarks) < 0.5) return; // that's a closing fist, not a pinch held forward
+  const clamped = Math.min(1, Math.max(0, (ratio - PINCH_CLOSED) / (PINCH_OPEN - PINCH_CLOSED)));
+  const level = Math.round(clamped * 100);
+  const now = performance.now();
+  if (Math.abs(level - lastVolumeSent) < 3 || now - lastVolumeSentAt < 150) return;
+  lastVolumeSent = level;
+  lastVolumeSentAt = now;
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'set_volume', level }));
+  }
+}
+
 function isExtended(landmarks, tipIdx, pipIdx) {
   return landmarks[tipIdx].y < landmarks[pipIdx].y;
 }
@@ -356,6 +439,12 @@ function classifyGesture(landmarks) {
   const fingersUp = [indexUp, middleUp, ringUp, pinkyUp].filter(Boolean).length;
   const thumbUp = landmarks[4].y < landmarks[3].y && landmarks[4].y < landmarks[2].y;
 
+  // A pinch (thumb + index close, other fingers not all extended) is
+  // handled continuously above for volume, not as a discrete hold-to-fire
+  // gesture — checked first, and gated on fingersUp <= 2, so it never
+  // collides with open_palm (fingersUp >= 3) or gets misread as "fist"
+  // (which would wrongly fire stopPlayback mid-adjustment).
+  if (fingersUp <= 2 && pinchRatio(landmarks) < 0.55 && pinchDistanceFromPalm(landmarks) > 0.5) return 'pinch';
   if (fingersUp >= 3) return 'open_palm';
   if (fingersUp === 0 && thumbUp) return 'thumbs_up';
   if (fingersUp === 0 && !thumbUp) return 'fist';
@@ -368,10 +457,14 @@ function updateGestureState(gesture) {
     gestureState.current = gesture;
     gestureState.since = now;
   }
-  gestureLabelEl.textContent = gesture === 'none' ? '' : gesture.replace('_', ' ').toUpperCase();
+  // 'pinch' gets its own live "VOLUME xx%" label from handlePinchVolume
+  // instead of the generic gesture-name label.
+  if (gesture !== 'pinch') {
+    gestureLabelEl.textContent = gesture === 'none' ? '' : gesture.replace('_', ' ').toUpperCase();
+  }
 
   const held = now - gestureState.since;
-  if (gesture === 'none' || held < HOLD_MS) return;
+  if (gesture === 'none' || gesture === 'pinch' || held < HOLD_MS) return;
   if (gestureState.lastFired === gesture && now - gestureState.lastFiredAt < COOLDOWN_MS) return;
 
   gestureState.lastFired = gesture;

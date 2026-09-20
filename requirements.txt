@@ -6,7 +6,8 @@ anthropic
 openai
 google-genai
 # Groq needs no separate package — it reuses the openai SDK with a
-# different base_url (see agent/providers.py).
+# different base_url (see agent/providers.py). The same SDK/client is also
+# reused for STT_BACKEND=groq in voice/stt.py — no extra package for that.
 
 # --- Browser automation ---
 # After installing, also run: playwright install chromium
@@ -24,3 +25,13 @@ SpeechRecognition
 faster-whisper
 PyAudio
 edge-tts
+
+# --- Wake word (optional — only needed if you run voice/wake_word.py) ---
+# websockets: uvicorn[standard] already pulls this in transitively for the
+# main server, but wake_word.py imports it directly as its own WebSocket
+# client, so it's listed explicitly rather than relied on implicitly.
+websockets
+# playsound: lets the wake-word listener play EDITH's reply on its own,
+# without needing a browser tab open. 1.2.2 specifically — later 1.3.x
+# releases have known playback issues on Windows.
+playsound==1.2.2

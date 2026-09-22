@@ -1,11 +1,3 @@
-"""
-EDITH — local entry point.
-
-    python main.py
-
-then open http://127.0.0.1:8765 in a browser (Chrome/Edge recommended).
-"""
-
 import asyncio
 import json
 from pathlib import Path

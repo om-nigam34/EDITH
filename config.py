@@ -1,12 +1,3 @@
-"""
-EDITH — configuration.
-
-Everything that might change between machines or over time lives here,
-loaded from environment variables (via a local .env file). Nothing is
-hardcoded so this can move from your laptop to a server later without
-code changes — same principle as the rest of the roadmap.
-"""
-
 import os
 from pathlib import Path
 

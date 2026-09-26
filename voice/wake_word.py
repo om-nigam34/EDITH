@@ -1,42 +1,41 @@
-"""
-Wake-word listener — a second, lightweight, always-on process, separate
-from the main EDITH server (main.py).
+# Wake-word listener — a second, lightweight, always-on process, separate
+# from the main EDITH server (main.py).
 
-Why a separate process: main.py's server only opens the microphone when
-someone has actively clicked/spoken/gestured. This script is meant to run
-continuously in the background (e.g. from a Windows startup shortcut),
-doing cheap, short listen -> transcribe -> check cycles with a tiny model,
-and only wakes the real assistant when it actually hears its name.
+# Why a separate process: main.py's server only opens the microphone when
+# someone has actively clicked/spoken/gestured. This script is meant to run
+# continuously in the background (e.g. from a Windows startup shortcut),
+# doing cheap, short listen -> transcribe -> check cycles with a tiny model,
+# and only wakes the real assistant when it actually hears its name.
 
-The shape of this — a separate always-on process, plain substring
-matching against a phrase list rather than a trained wake-word model, and
-a liveness check before deciding whether to (re)launch the main app — is
-the same general pattern used by comparable open-source assistants (it's
-a common, sensible design, not unique to any one project). What's
-different here, tailored to EDITH's own architecture instead of copying
-anyone else's implementation:
+# The shape of this — a separate always-on process, plain substring
+# matching against a phrase list rather than a trained wake-word model, and
+# a liveness check before deciding whether to (re)launch the main app — is
+# the same general pattern used by comparable open-source assistants (it's
+# a common, sensible design, not unique to any one project). What's
+# different here, tailored to EDITH's own architecture instead of copying
+# anyone else's implementation:
 
-- It stays fully offline: EDITH's main STT already runs faster-whisper
-  locally, so the wake-word pass reuses that instead of depending on a
-  free cloud speech API that needs internet and can rate-limit.
-- Because EDITH's "brain" is a persistent WebSocket server rather than a
-  program that gets launched fresh per conversation, waking it up means:
-  make sure the server process is running (launching it if not), then
-  connect to it *as a WebSocket client* and say "listen now" — the same
-  message type the browser UI sends when you click the mic.
-- It plays the reply locally (via `playsound`, optional — see
-  requirements.txt) instead of requiring a browser tab to be open, so
-  hands-free wake-word use doesn't depend on having the UI in focus.
+# - It stays fully offline: EDITH's main STT already runs faster-whisper
+#   locally, so the wake-word pass reuses that instead of depending on a
+#   free cloud speech API that needs internet and can rate-limit.
+# - Because EDITH's "brain" is a persistent WebSocket server rather than a
+#   program that gets launched fresh per conversation, waking it up means:
+#   make sure the server process is running (launching it if not), then
+#   connect to it *as a WebSocket client* and say "listen now" — the same
+#   message type the browser UI sends when you click the mic.
+# - It plays the reply locally (via `playsound`, optional — see
+#   requirements.txt) instead of requiring a browser tab to be open, so
+#   hands-free wake-word use doesn't depend on having the UI in focus.
 
-Run it with:
-    python voice/wake_word.py
-or double-click start_wake_word.bat (see project root).
+# Run it with:
+#     python voice/wake_word.py
+# or double-click start_wake_word.bat (see project root).
 
-Untested against real microphone hardware from where this was written —
-the logic follows faster-whisper/SpeechRecognition's documented behavior
-and a straightforward socket/WebSocket handshake, but give it a real run
-and watch the console output the first few times.
-"""
+# Untested against real microphone hardware from where this was written —
+# the logic follows faster-whisper/SpeechRecognition's documented behavior
+# and a straightforward socket/WebSocket handshake, but give it a real run
+# and watch the console output the first few times.
+
 
 import asyncio
 import io

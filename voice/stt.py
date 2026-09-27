@@ -1,34 +1,32 @@
-"""
-Speech-to-text.
+# Speech-to-text.
 
-Two backends behind one interface, picked by config.STT_BACKEND:
+# Two backends behind one interface, picked by config.STT_BACKEND:
 
-- "local" (default): faster-whisper running entirely on your machine (CPU
-  is fine), so there's no per-request internet round-trip and no free-tier
-  accuracy ceiling. The first run downloads the model from Hugging Face and
-  caches it locally; every run after that is fully offline.
-- "groq": Groq's hosted whisper-large-v3-turbo, using the same account/key
-  as LLM_PROVIDER=groq. Trades "needs internet + a Groq key" for noticeably
-  faster and more accurate transcription (the full large-v3 model instead
-  of whatever fits on your CPU), which matters most for Hindi and accented
-  speech. Falls back to local automatically if the request fails.
+# - "local" (default): faster-whisper running entirely on your machine (CPU
+#   is fine), so there's no per-request internet round-trip and no free-tier
+#   accuracy ceiling. The first run downloads the model from Hugging Face and
+#   caches it locally; every run after that is fully offline.
+# - "groq": Groq's hosted whisper-large-v3-turbo, using the same account/key
+#   as LLM_PROVIDER=groq. Trades "needs internet + a Groq key" for noticeably
+#   faster and more accurate transcription (the full large-v3 model instead
+#   of whatever fits on your CPU), which matters most for Hindi and accented
+#   speech. Falls back to local automatically if the request fails.
 
-SpeechRecognition's Microphone is still used purely for audio *capture* in
-both cases — it already handles ambient-noise calibration and "stop
-automatically when you go quiet" well, so there's no reason to replace
-that part.
+# SpeechRecognition's Microphone is still used purely for audio *capture* in
+# both cases — it already handles ambient-noise calibration and "stop
+# automatically when you go quiet" well, so there's no reason to replace
+# that part.
 
-IMPORTANT (this was the actual bug behind "Hindi recognition doesn't
-work"): STT_MODEL_SIZE must be a multilingual model name (tiny, base,
-small, medium, large-v3) — never a "*.en" variant. The ".en" models are
-English-only at the weights level; no amount of clear speech makes them
-transcribe Hindi. See config.py for the corrected default.
+# IMPORTANT (this was the actual bug behind "Hindi recognition doesn't
+# work"): STT_MODEL_SIZE must be a multilingual model name (tiny, base,
+# small, medium, large-v3) — never a "*.en" variant. The ".en" models are
+# English-only at the weights level; no amount of clear speech makes them
+# transcribe Hindi. See config.py for the corrected default.
 
-Tuning accuracy vs. speed: set STT_MODEL_SIZE in .env. 'tiny' is
-fastest/least accurate, 'small' (default) is a good balance on a normal
-laptop CPU, 'medium'/'large-v3' are noticeably more accurate but slower to
-load and transcribe — or skip that tradeoff entirely with STT_BACKEND=groq.
-"""
+# Tuning accuracy vs. speed: set STT_MODEL_SIZE in .env. 'tiny' is
+# fastest/least accurate, 'small' (default) is a good balance on a normal
+# laptop CPU, 'medium'/'large-v3' are noticeably more accurate but slower to
+# load and transcribe — or skip that tradeoff entirely with STT_BACKEND=groq.
 
 import io
 

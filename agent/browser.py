@@ -1,28 +1,26 @@
-"""
-Browser automation.
+# Browser automation.
 
-This gives EDITH a *controllable* browser — separate from open_website,
-which just fires a URL at your regular browser and has no way to reach
-back into the page afterward. This one EDITH can read the contents of and
-interact with: click things, type into things.
+# This gives EDITH a *controllable* browser — separate from open_website,
+# which just fires a URL at your regular browser and has no way to reach
+# back into the page afterward. This one EDITH can read the contents of and
+# interact with: click things, type into things.
 
-Deliberately general rather than site-specific: instead of hard-coding
-selectors for one site (which breaks the moment that site's layout
-changes), browser_read_page hands the model a numbered list of visible
-interactive elements, and it picks which one to act on by index. That's
-less precise than a hand-tuned script for one exact site, but it works
-across any page instead of only the one it was written against.
+# Deliberately general rather than site-specific: instead of hard-coding
+# selectors for one site (which breaks the moment that site's layout
+# changes), browser_read_page hands the model a numbered list of visible
+# interactive elements, and it picks which one to act on by index. That's
+# less precise than a hand-tuned script for one exact site, but it works
+# across any page instead of only the one it was written against.
 
-Known limitation: indices are only valid until the page changes — a click
-that opens a menu, a navigation, lazily-loaded content. If a click/type
-call reports an out-of-range index, the fix is calling browser_read_page
-again for fresh indices; the persona is instructed to do this
-automatically rather than guessing with stale ones.
+# Known limitation: indices are only valid until the page changes — a click
+# that opens a menu, a navigation, lazily-loaded content. If a click/type
+# call reports an out-of-range index, the fix is calling browser_read_page
+# again for fresh indices; the persona is instructed to do this
+# automatically rather than guessing with stale ones.
 
-Setup: this needs the actual browser binary, not just the Python package:
-    pip install playwright
-    playwright install chromium
-"""
+# Setup: this needs the actual browser binary, not just the Python package:
+#     pip install playwright
+#     playwright install chromium
 
 import time
 

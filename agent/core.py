@@ -1,11 +1,10 @@
-"""
-The reasoning core.
+# The reasoning core.
 
-Delegates the actual API mechanics to a provider (Anthropic or OpenAI, see
-agent/providers.py) so the brain can be swapped via one config value.
-Persona, memory, and tool dispatch are identical no matter which provider
-is running underneath.
-"""
+# Delegates the actual API mechanics to a provider (Anthropic or OpenAI, see
+# agent/providers.py) so the brain can be swapped via one config value.
+# Persona, memory, and tool dispatch are identical no matter which provider
+# is running underneath.
+
 
 from __future__ import annotations
 

@@ -1,16 +1,14 @@
-"""
-LLM providers.
+# LLM providers.
 
-Each provider owns its own tool-calling loop end-to-end, in its native
-message format — Anthropic and OpenAI don't represent conversation history
-the same way, and normalizing that away would just add a translation layer
-that could silently drop information. Instead, core.py depends only on the
-run_turn() contract below; it never sees provider-specific message shapes.
+# Each provider owns its own tool-calling loop end-to-end, in its native
+# message format — Anthropic and OpenAI don't represent conversation history
+# the same way, and normalizing that away would just add a translation layer
+# that could silently drop information. Instead, core.py depends only on the
+# run_turn() contract below; it never sees provider-specific message shapes.
 
-To add a third provider (Gemini, a local model, etc.), write one more class
-implementing run_turn() and add one line to build_provider(). Nothing else
-in the codebase changes.
-"""
+# To add a third provider (Gemini, a local model, etc.), write one more class
+# implementing run_turn() and add one line to build_provider(). Nothing else
+# in the codebase changes.
 
 from __future__ import annotations
 

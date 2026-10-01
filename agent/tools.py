@@ -1,14 +1,13 @@
-"""
-Tool implementations.
+# Tool implementations.
 
-Every function here returns a short string — that string is what gets fed
-back to the Claude API as the tool_result, so keep them factual and terse;
-the model turns them into natural speech on its own.
+# Every function here returns a short string — that string is what gets fed
+# back to the Claude API as the tool_result, so keep them factual and terse;
+# the model turns them into natural speech on its own.
 
-Design rule: never let a missing optional dependency crash the whole
-assistant. Each Windows-specific integration is imported lazily inside its
-function and fails soft with an actionable message.
-"""
+# Design rule: never let a missing optional dependency crash the whole
+# assistant. Each Windows-specific integration is imported lazily inside its
+# function and fails soft with an actionable message.
+
 
 from __future__ import annotations
 
@@ -25,9 +24,7 @@ from config import config
 
 IS_WINDOWS = platform.system() == "Windows"
 
-# ---------------------------------------------------------------------------
 # Applications
-# ---------------------------------------------------------------------------
 
 APP_MAP = {
     "notepad": "notepad.exe",
@@ -98,9 +95,7 @@ def close_application(app_name: str) -> str:
     return f"No running process matching '{app_name}' was found."
 
 
-# ---------------------------------------------------------------------------
 # Web
-# ---------------------------------------------------------------------------
 
 SITE_MAP = {
     "youtube": "https://www.youtube.com",
@@ -147,9 +142,7 @@ def play_on_youtube(query: str) -> str:
     return f"Opened YouTube results for '{query}'."
 
 
-# ---------------------------------------------------------------------------
 # Audio / display
-# ---------------------------------------------------------------------------
 
 def _volume_interface():
     from ctypes import POINTER, cast
@@ -209,9 +202,7 @@ def set_brightness(level: int) -> str:
         return f"Couldn't set brightness: {exc}"
 
 
-# ---------------------------------------------------------------------------
 # System
-# ---------------------------------------------------------------------------
 
 def get_system_status() -> str:
     try:
@@ -282,9 +273,7 @@ def open_path(path: str) -> str:
         return f"Couldn't open {path}: {exc}"
 
 
-# ---------------------------------------------------------------------------
 # Notes / lightweight memory
-# ---------------------------------------------------------------------------
 
 def save_note(text: str) -> str:
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
@@ -301,9 +290,7 @@ def read_notes() -> str:
     return content if content else "No notes saved yet."
 
 
-# ---------------------------------------------------------------------------
 # Dispatch table — name in tool_schemas.py -> callable here
-# ---------------------------------------------------------------------------
 
 DISPATCH = {
     "open_application": lambda i: open_application(i["app_name"]),

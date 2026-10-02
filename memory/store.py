@@ -1,19 +1,17 @@
-"""
-Two layers of memory, kept deliberately separate:
+# Two layers of memory, kept deliberately separate:
 
-1. Live session history — the exact list of API message blocks (including
-   tool_use/tool_result) needed for the current conversation's tool loop.
-   Lives in memory only; resets when EDITH restarts, same as a fresh
-   conversation with any assistant. Raw tool-call blocks aren't JSON-clean,
-   so this layer is intentionally not persisted.
+# 1. Live session history — the exact list of API message blocks (including
+#    tool_use/tool_result) needed for the current conversation's tool loop.
+#    Lives in memory only; resets when EDITH restarts, same as a fresh
+#    conversation with any assistant. Raw tool-call blocks aren't JSON-clean,
+#    so this layer is intentionally not persisted.
 
-2. Persistent text log — a plain-text record of what was actually said (no
-   tool internals), written to disk so EDITH can recall the gist of past
-   sessions on startup. This is the seed of the "memory and personality"
-   phase on the roadmap — a fuller long-term memory (facts, preferences,
-   embeddings/search) can be layered on top of this log later without
-   changing the interface other callers use.
-"""
+# 2. Persistent text log — a plain-text record of what was actually said (no
+#    tool internals), written to disk so EDITH can recall the gist of past
+#    sessions on startup. This is the seed of the "memory and personality"
+#    phase on the roadmap — a fuller long-term memory (facts, preferences,
+#    embeddings/search) can be layered on top of this log later without
+#    changing the interface other callers use.
 
 import json
 from datetime import datetime
@@ -31,7 +29,7 @@ class MemoryStore:
         if not config.MEMORY_FILE.exists():
             config.MEMORY_FILE.write_text("[]", encoding="utf-8")
 
-    # --- live, in-process history (used directly in the API loop) ---
+    # live, in-process history (used directly in the API loop)
 
     def get_history(self) -> list[dict[str, Any]]:
         return self._live_history
@@ -39,7 +37,7 @@ class MemoryStore:
     def set_history(self, history: list[dict[str, Any]]) -> None:
         self._live_history = history
 
-    # --- durable plain-text log (used for continuity across restarts) ---
+    # durable plain-text log (used for continuity across restarts)
 
     def log_turn(self, role: str, text: str) -> None:
         if not text:

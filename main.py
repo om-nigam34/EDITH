@@ -20,8 +20,8 @@ agent: EdithAgent | None = None
 
 
 def _friendly_error(exc: Exception) -> str:
-    """Turns a raw provider exception into something worth reading aloud,
-    instead of dumping a stack trace's worth of JSON into the transcript."""
+    # Turns a raw provider exception into something worth reading aloud,
+    # instead of dumping a stack trace's worth of JSON into the transcript.
     text = str(exc)
     lowered = text.lower()
     if "429" in text or "resource_exhausted" in lowered or "rate limit" in lowered or "quota" in lowered:

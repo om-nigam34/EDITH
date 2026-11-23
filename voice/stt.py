@@ -53,8 +53,8 @@ def _get_model() -> WhisperModel:
 
 
 def _record_audio(timeout: float, phrase_time_limit: float) -> bytes:
-    """Blocking mic capture — always runs off the event loop via to_thread
-    in listen_once(), regardless of which transcription backend is used."""
+    # Blocking mic capture — always runs off the event loop via to_thread
+    # in listen_once(), regardless of which transcription backend is used.
     try:
         with sr.Microphone() as source:
             _recognizer.adjust_for_ambient_noise(source, duration=0.4)

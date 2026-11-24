@@ -137,22 +137,6 @@ class OpenAIProvider:
 
 
 class GeminiProvider:
-    """
-    Google AI Studio / Gemini API. Genuinely free for Flash-class models,
-    no credit card — see README for the current rate limits and the one
-    real tradeoff (free-tier prompts may be used to improve Google's
-    products; paid tier does not have this clause).
-
-    Note: this is the one provider I couldn't fully verify against a live
-    API call from the build environment — Gemini's function-calling wire
-    format was the least consistent across Google's own documentation
-    while building this. The logic below follows the most-corroborated
-    pattern (manual function-calling via google.genai.types), but if you
-    hit an error here, check https://ai.google.dev/gemini-api/docs/function-calling
-    against the exact version of `google-genai` you have installed —
-    this is the most likely spot needing a small adjustment.
-    """
-
     name = "gemini"
 
     def __init__(self, api_key: str, model: str, max_tokens: int):

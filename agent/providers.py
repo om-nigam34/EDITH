@@ -204,14 +204,6 @@ class GeminiProvider:
 
 
 class GroqProvider:
-    """
-    Groq's free tier: no credit card, gated only by rate limits (fast
-    inference on open-weight models like Llama 3.3). Groq exposes an
-    OpenAI-compatible Chat Completions endpoint, so this reuses the
-    `openai` SDK pointed at Groq's base URL instead of a separate
-    dependency.
-    """
-
     name = "groq"
 
     def __init__(self, api_key: str, model: str, max_tokens: int):

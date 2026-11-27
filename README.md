@@ -26,6 +26,7 @@ EDITH is a locally-hosted personal AI assistant — voice in, voice out, hand ge
 - **Controls the machine.** Opens and closes apps, opens websites, runs searches, plays things on YouTube, sets volume/brightness, mutes, reports CPU/RAM/battery/disk, takes screenshots, locks the workstation, and can shut down/restart/sleep — the last of those only after you've explicitly said yes in the conversation.
 - **Drives an actual browser.** A separate, persistent, controllable Chromium instance (Playwright) that EDITH can read and act on — click, type, navigate — for anything that needs more than just opening a URL.
 - **Remembers.** Live session history feeds the tool-calling loop; a plain-text log on disk lets EDITH recall roughly where the last session left off.
+- **Decides before it spends.** A local "Brain" router sorts every request first: commands and small talk run on this PC, live questions (weather, news, currency, crypto, time, Wikipedia) use free public APIs, and only real questions reach the LLM. Typically most requests never cost an API call. English, Hindi and Hinglish all work.
 - **Runs on whatever brain you want.** Claude, GPT, Gemini, or Groq's hosted models — swap providers with one line in `.env`, no code changes.
 
 ## How It's Wired
@@ -34,7 +35,10 @@ EDITH is a locally-hosted personal AI assistant — voice in, voice out, hand ge
 flowchart LR
     U["Voice / Gesture / Text"] --> WS[FastAPI + WebSocket]
     WS --> CORE["EdithAgent — Reasoning Core"]
-    CORE --> LLM{LLM Provider}
+    CORE --> BRAIN{"Brain — local router"}
+    BRAIN -->|task / small talk| TOOLS
+    BRAIN -->|live data| LIVE["Free APIs: weather, news, wiki, FX, crypto"]
+    BRAIN -->|real question| LLM{LLM Provider}
     LLM --> ANT[Claude]
     LLM --> OAI[GPT]
     LLM --> GEM[Gemini]
@@ -78,7 +82,9 @@ EDITH/
 ├── main.py                 FastAPI server + WebSocket bridge to the UI
 ├── config.py                All settings, loaded from .env
 ├── agent/
-│   ├── core.py               Reasoning loop — persona, memory, delegates to a provider
+│   ├── core.py               Reasoning loop — asks the brain first, then a provider
+│   ├── brain.py              Local intent router: tasks, small talk, live data, timers
+│   ├── live.py               Keyless live-data fetchers (Open-Meteo, Google News RSS, Wikipedia, ...)
 │   ├── providers.py          Anthropic, OpenAI, Gemini, and Groq behind one interface
 │   ├── persona.py            EDITH's system prompt and operating rules
 │   ├── tool_schemas.py       The contract between the brain and the real world
@@ -90,10 +96,11 @@ EDITH/
 │   └── wake_word.py             Standalone "Hey EDITH" wake-word listener
 ├── memory/
 │   └── store.py                 Live session history + persistent text log
+├── tests/                          pytest suite for the brain, routing and WebSocket protocol
 ├── frontend/
 │   ├── index.html                 HUD shell
-│   ├── style.css                   Animated rings, waveform, gesture states
-│   └── app.js                        WebSocket client, audio graph, hand tracking
+│   ├── style.css                   Layout, route colours, responsive drawer
+│   └── app.js                        WebSocket client, particle orb, hand tracking
 └── stop_wake_word.bat               Clean shutdown for the wake-word process
 ```
 
@@ -138,6 +145,9 @@ Nothing else changes — every provider reads from the same tool list, so a new 
 
 ## Known Limitations
 
+- The brain's rules fire only on unambiguous phrasing. Anything it isn't sure about goes to the LLM, so a rephrased command can cost one API call. That is deliberate: a wrong local guess is worse than a spent call.
+- With no LLM configured, EDITH runs in local-only mode: commands, live data and small talk still work, open questions get a message saying no AI model is connected.
+- Timers and reminders speak only while a HUD tab is open; otherwise they print to the console.
 - System-control tools (apps, volume, brightness, power) are Windows-only in this build.
 - Browser automation reads a page's interactive elements by index each time — it's general-purpose, not hand-tuned per site, so complex or frequently-changing pages can still trip it up.
 - `edge-tts` speaks one voice per reply. Romanized Hinglish comes out in whichever voice is active, phonetically — there's no clean fix for that with a single-voice-per-utterance engine.

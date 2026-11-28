@@ -37,6 +37,18 @@ class Config:
     # summarizing/trimming. Kept small at first on purpose — see memory/store.py.
     MAX_HISTORY_TURNS: int = int(os.getenv("MAX_HISTORY_TURNS", "20"))
 
+    # --- Local brain (agent/brain.py) ---
+    # The router that answers tasks, live-data lookups and small talk locally,
+    # so only real questions cost an LLM call. Set BRAIN_ENABLED=false to send
+    # every request to the LLM exactly like before.
+    BRAIN_ENABLED: bool = os.getenv("BRAIN_ENABLED", "true").strip().lower() == "true"
+    # Leaves the tool schemas off LLM calls for clearly conversational questions
+    # (fewer tokens per call). Tools stay attached for anything that looks like an
+    # action, for short follow-ups, and whenever recent history contains tool calls.
+    BRAIN_SLIM_CALLS: bool = os.getenv("BRAIN_SLIM_CALLS", "true").strip().lower() == "true"
+    # City used for "what's the weather" when none is named.
+    DEFAULT_CITY: str = os.getenv("DEFAULT_CITY", "Kanpur")
+
     # --- Voice: text-to-speech ---
     TTS_VOICE: str = os.getenv("TTS_VOICE", "en-GB-SoniaNeural")  # calm, precise, British — EDITH-coded
     HINDI_TTS_VOICE: str = os.getenv("HINDI_TTS_VOICE", "hi-IN-SwaraNeural")  # used automatically for Devanagari replies
